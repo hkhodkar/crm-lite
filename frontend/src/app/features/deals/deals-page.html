@@ -1,0 +1,206 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <h1>Deals</h1>
+      <p class="subtitle">
+        @if (isBoard()) {
+          Drag a card to another column to change its stage. Open pipeline:
+          <strong>{{ boardTotal() | money }}</strong>
+        } @else {
+          Every deal in one sortable list.
+        }
+      </p>
+    </div>
+    <div class="page-actions">
+      <div class="view-toggle" role="group" aria-label="View">
+        <button type="button" [class.active]="isBoard()" (click)="setView('board')">
+          <app-icon name="kanban" [size]="16" /> Board
+        </button>
+        <button type="button" [class.active]="!isBoard()" (click)="setView('list')">
+          <app-icon name="list" [size]="16" /> List
+        </button>
+      </div>
+      <button type="button" class="btn btn-primary" (click)="formOpen.set(true)">
+        <app-icon name="plus" /> New deal
+      </button>
+    </div>
+  </header>
+
+  <div class="card filters" [class.card-flush]="!isBoard()">
+    <div class="toolbar">
+      <label class="input-icon search">
+        <span class="visually-hidden">Search deals</span>
+        <app-icon name="search" [size]="16" />
+        <input
+          class="input"
+          type="search"
+          placeholder="Search deal, company or contact"
+          [formControl]="listQuery.search"
+        />
+      </label>
+      <label>
+        <span class="visually-hidden">Company</span>
+        <select class="select" (change)="setFilter('company', $any($event.target).value)">
+          <option value="">All companies</option>
+          @for (option of companies.value() ?? []; track option.id) {
+            <option [value]="option.id" [selected]="option.id === companyId()">
+              {{ option.name }}
+            </option>
+          }
+        </select>
+      </label>
+      @if (!isBoard()) {
+        <label>
+          <span class="visually-hidden">Stage</span>
+          <select class="select" (change)="setFilter('stage', $any($event.target).value)">
+            <option value="">All stages</option>
+            @for (option of stages; track option.value) {
+              <option [value]="option.value" [selected]="option.value === stageFilter()">
+                {{ option.label }}
+              </option>
+            }
+          </select>
+        </label>
+        <label>
+          <span class="visually-hidden">Status</span>
+          <select class="select" (change)="setFilter('status', $any($event.target).value)">
+            <option value="">Any status</option>
+            @for (option of statuses; track option.value) {
+              <option [value]="option.value" [selected]="option.value === statusFilter()">
+                {{ option.label }}
+              </option>
+            }
+          </select>
+        </label>
+        @if (result(); as page) {
+          <span class="toolbar-end"
+            >{{ page.total }} {{ page.total === 1 ? 'deal' : 'deals' }}</span
+          >
+        }
+      }
+    </div>
+
+    @if (!isBoard()) {
+      @if (deals.isLoading()) {
+        <div class="loading-bar"></div>
+      }
+      @if (deals.error()) {
+        <p class="empty-state">Could not load deals. Is the API running?</p>
+      } @else if (result(); as page) {
+        @if (page.items.length) {
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>
+                    <app-sort-header key="title" [sort]="sortKey()" (sortChange)="setSort($event)">
+                      Deal
+                    </app-sort-header>
+                  </th>
+                  <th>
+                    <app-sort-header
+                      key="company"
+                      [sort]="sortKey()"
+                      (sortChange)="setSort($event)"
+                    >
+                      Company
+                    </app-sort-header>
+                  </th>
+                  <th>
+                    <app-sort-header key="stage" [sort]="sortKey()" (sortChange)="setSort($event)">
+                      Stage
+                    </app-sort-header>
+                  </th>
+                  <th class="num">
+                    <app-sort-header
+                      key="amount"
+                      [sort]="sortKey()"
+                      [descFirst]="true"
+                      (sortChange)="setSort($event)"
+                    >
+                      Amount
+                    </app-sort-header>
+                  </th>
+                  <th>
+                    <app-sort-header
+                      key="expected_close_date"
+                      [sort]="sortKey()"
+                      (sortChange)="setSort($event)"
+                    >
+                      Close date
+                    </app-sort-header>
+                  </th>
+                  <th>
+                    <app-sort-header
+                      key="updated_at"
+                      [sort]="sortKey()"
+                      [descFirst]="true"
+                      (sortChange)="setSort($event)"
+                    >
+                      Updated
+                    </app-sort-header>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (deal of page.items; track deal.id) {
+                  <tr class="clickable" (click)="openDeal(deal)">
+                    <td>
+                      <div class="cell-main">
+                        <div>
+                          <a [routerLink]="['/deals', deal.id]"
+                            ><strong>{{ deal.title }}</strong></a
+                          >
+                          <small>{{ deal.contact?.full_name ?? 'No contact' }}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>{{ deal.company?.name ?? '-' }}</td>
+                    <td><app-stage-badge [stage]="deal.stage" /></td>
+                    <td class="num">
+                      <strong>{{ deal.amount | money }}</strong>
+                    </td>
+                    <td>
+                      {{
+                        deal.expected_close_date
+                          ? (deal.expected_close_date | date: 'MMM d, y')
+                          : '-'
+                      }}
+                    </td>
+                    <td class="text-muted">{{ deal.updated_at | date: 'MMM d' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <app-pagination
+            [page]="page.page"
+            [pageSize]="page.page_size"
+            [total]="page.total"
+            (pageChange)="setPage($event)"
+          />
+        } @else {
+          <p class="empty-state">No deals match these filters.</p>
+        }
+      }
+    }
+  </div>
+
+  @if (isBoard()) {
+    @if (pipeline.error()) {
+      <p class="card empty-state">Could not load the pipeline. Is the API running?</p>
+    } @else if (columns().length) {
+      <app-pipeline-board [columns]="columns()" (moved)="onMoved($event)" />
+    } @else {
+      <div class="loading-bar"></div>
+    }
+  }
+</section>
+
+@if (formOpen()) {
+  <app-deal-form
+    [defaults]="{ companyId: companyId() }"
+    (saved)="onSaved()"
+    (closed)="formOpen.set(false)"
+  />
+}

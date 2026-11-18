@@ -1,0 +1,155 @@
+<section class="page">
+  <div>
+    <a class="breadcrumb" routerLink="/deals"><app-icon name="arrow-left" [size]="14" /> Deals</a>
+  </div>
+
+  @if (deal.error()) {
+    <div class="card not-found">
+      <h2>Deal not found</h2>
+      <p>It may have been deleted.</p>
+      <a class="btn" routerLink="/deals">Back to deals</a>
+    </div>
+  } @else if (deal.value(); as d) {
+    <header class="detail-header">
+      <div class="identity">
+        <div>
+          <h1>{{ d.title }}</h1>
+          <p class="subtitle">
+            <app-stage-badge [stage]="d.stage" />
+            @if (d.company; as company) {
+              <a [routerLink]="['/companies', company.id]">{{ company.name }}</a>
+            }
+          </p>
+        </div>
+      </div>
+      <div class="page-actions">
+        <button type="button" class="btn" (click)="editing.set(true)">
+          <app-icon name="pencil" [size]="16" /> Edit
+        </button>
+        <button type="button" class="btn" (click)="confirmingDelete.set(true)">
+          <app-icon name="trash" [size]="16" /> Delete
+        </button>
+      </div>
+    </header>
+
+    <div class="card stage-card">
+      <ol class="stepper list-plain" aria-label="Deal stage">
+        @for (stage of openStages; track stage.value; let i = $index) {
+          <li>
+            <button
+              type="button"
+              class="step"
+              [class.done]="d.stage === 'won' || i < stageIndex(d)"
+              [class.current]="stage.value === d.stage"
+              [attr.aria-current]="stage.value === d.stage ? 'step' : null"
+              [disabled]="changingStage()"
+              (click)="setStage(d, stage.value)"
+            >
+              {{ stage.label }}
+            </button>
+          </li>
+        }
+      </ol>
+      <div class="close-actions">
+        <button
+          type="button"
+          class="btn won"
+          [class.active]="d.stage === 'won'"
+          [disabled]="changingStage()"
+          (click)="setStage(d, 'won')"
+        >
+          <app-icon name="trophy" [size]="16" /> {{ d.stage === 'won' ? 'Won' : 'Mark won' }}
+        </button>
+        <button
+          type="button"
+          class="btn lost"
+          [class.active]="d.stage === 'lost'"
+          [disabled]="changingStage()"
+          (click)="setStage(d, 'lost')"
+        >
+          <app-icon name="x" [size]="16" /> {{ d.stage === 'lost' ? 'Lost' : 'Mark lost' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div class="column">
+        <div class="card">
+          <div class="card-header"><h2>Details</h2></div>
+          <dl class="meta-list">
+            <div>
+              <dt>Amount</dt>
+              <dd class="amount num">{{ d.amount | money }}</dd>
+            </div>
+            <div>
+              <dt>Expected close</dt>
+              <dd>
+                {{ d.expected_close_date ? (d.expected_close_date | date: 'MMM d, y') : '-' }}
+              </dd>
+            </div>
+            @if (d.closed_at) {
+              <div>
+                <dt>{{ d.stage === 'won' ? 'Won on' : 'Closed on' }}</dt>
+                <dd>{{ d.closed_at | date: 'MMM d, y' }}</dd>
+              </div>
+            }
+            <div>
+              <dt>Company</dt>
+              <dd>
+                @if (d.company; as company) {
+                  <a [routerLink]="['/companies', company.id]">{{ company.name }}</a>
+                } @else {
+                  <span class="text-muted">-</span>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>Main contact</dt>
+              <dd>
+                @if (d.contact; as contact) {
+                  <span class="contact">
+                    <app-avatar [name]="contact.full_name" [size]="28" />
+                    <span>
+                      <a [routerLink]="['/contacts', contact.id]">{{ contact.full_name }}</a>
+                      <small class="text-muted">{{ contact.email }}</small>
+                    </span>
+                  </span>
+                } @else {
+                  <span class="text-muted">-</span>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>Created</dt>
+              <dd>{{ d.created_at | date: 'MMM d, y' }}</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+
+      <div class="column">
+        <app-activity-timeline
+          [filter]="{ deal_id: d.id }"
+          [dealId]="d.id"
+          [defaultContactId]="d.contact_id"
+          [contactOptions]="contactOptions()"
+        />
+      </div>
+    </div>
+
+    @if (editing()) {
+      <app-deal-form [deal]="d" (saved)="onSaved($event)" (closed)="editing.set(false)" />
+    }
+    @if (confirmingDelete()) {
+      <app-confirm-dialog
+        title="Delete deal?"
+        [message]="d.title + ' and its activity will be deleted. This cannot be undone.'"
+        [busy]="deleting()"
+        (confirmed)="delete()"
+        (cancelled)="confirmingDelete.set(false)"
+      />
+    }
+  } @else {
+    <div class="loading-bar"></div>
+  }
+</section>

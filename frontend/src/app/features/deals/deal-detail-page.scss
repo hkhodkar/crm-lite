@@ -1,0 +1,129 @@
+.stage-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 14px;
+}
+
+.stepper {
+  display: flex;
+  flex: 1 1 480px;
+  min-width: 0;
+
+  li {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+// chevron shaped steps
+.step {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  padding: 0 14px 0 24px;
+  border: 0;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%);
+  transition: background-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--border);
+    color: var(--text);
+  }
+
+  &.done {
+    background: color-mix(in srgb, var(--primary) 18%, var(--surface));
+    color: var(--primary);
+  }
+
+  &.current {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  &:disabled {
+    cursor: progress;
+  }
+}
+
+li:first-child .step {
+  padding-left: 16px;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
+}
+
+.close-actions {
+  display: flex;
+  gap: 8px;
+
+  .won.active {
+    border-color: var(--success);
+    background: var(--success);
+    color: #fff;
+  }
+
+  .lost.active {
+    border-color: var(--danger);
+    background: var(--danger);
+    color: #fff;
+  }
+
+  .won:not(.active):hover {
+    border-color: var(--success);
+    color: var(--success);
+  }
+
+  .lost:not(.active):hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+}
+
+.amount {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.contact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  small {
+    display: block;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  // chevrons get too cramped on phones, use a simple 2x2 grid instead
+  .stepper {
+    display: grid;
+    flex-basis: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .step,
+  li:first-child .step {
+    padding: 0 8px;
+    border-radius: var(--radius-sm);
+    clip-path: none;
+  }
+
+  .close-actions {
+    width: 100%;
+
+    .btn {
+      flex: 1;
+    }
+  }
+}

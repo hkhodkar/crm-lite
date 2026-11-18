@@ -1,0 +1,97 @@
+<app-modal [title]="deal() ? 'Edit deal' : 'New deal'" (closed)="closed.emit()">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="modal-body">
+      @if (serverError(); as error) {
+        <p class="form-error" role="alert">{{ error }}</p>
+      }
+      <div class="form-grid">
+        <div class="field full">
+          <label for="deal-title">Deal name</label>
+          <input
+            id="deal-title"
+            class="input"
+            formControlName="title"
+            placeholder="e.g. Customer portal redesign"
+          />
+          @if (showError('title')) {
+            <span class="field-error">Give the deal a name</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="deal-amount">Amount (USD)</label>
+          <div class="input-prefix">
+            <span>$</span>
+            <input
+              id="deal-amount"
+              class="input"
+              type="number"
+              min="1"
+              step="any"
+              inputmode="decimal"
+              formControlName="amount"
+              placeholder="25000"
+            />
+          </div>
+          @if (showError('amount')) {
+            <span class="field-error">
+              {{
+                form.controls.amount.hasError('required')
+                  ? 'Amount is required'
+                  : 'Amount must be greater than 0'
+              }}
+            </span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="deal-stage">Stage</label>
+          <select id="deal-stage" class="select" formControlName="stage">
+            @for (stage of stages; track stage.value) {
+              <option [ngValue]="stage.value">{{ stage.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="deal-company">Company <span class="optional">(optional)</span></label>
+          <select
+            id="deal-company"
+            class="select"
+            formControlName="company_id"
+            (change)="onCompanyChange()"
+          >
+            <option [ngValue]="null">No company</option>
+            @for (company of companies.value() ?? []; track company.id) {
+              <option [ngValue]="company.id">{{ company.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="deal-contact">Contact <span class="optional">(optional)</span></label>
+          <select id="deal-contact" class="select" formControlName="contact_id">
+            <option [ngValue]="null">No contact</option>
+            @for (contact of contactOptions(); track contact.id) {
+              <option [ngValue]="contact.id">{{ contact.full_name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field full">
+          <label for="deal-close"
+            >Expected close date <span class="optional">(optional)</span></label
+          >
+          <input id="deal-close" class="input" type="date" formControlName="expected_close_date" />
+        </div>
+      </div>
+    </div>
+
+    <footer class="modal-footer">
+      <button type="button" class="btn" (click)="closed.emit()">Cancel</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : deal() ? 'Save changes' : 'Create deal' }}
+      </button>
+    </footer>
+  </form>
+</app-modal>

@@ -1,0 +1,101 @@
+<div class="board" cdkDropListGroup>
+  <div class="open-columns">
+    @for (column of openColumns(); track column.stage) {
+      <section class="column" [style.--stage]="stageInfo(column.stage).color">
+        <header class="column-header">
+          <div class="column-title">
+            <span class="dot"></span>
+            <h2>{{ stageInfo(column.stage).label }}</h2>
+            <span class="count">{{ column.count }}</span>
+          </div>
+          <span class="total num">{{ column.total_amount | money: true }}</span>
+        </header>
+
+        <div
+          class="drop-list"
+          cdkDropList
+          [cdkDropListData]="column.stage"
+          (cdkDropListDropped)="drop($event)"
+          [attr.aria-label]="stageInfo(column.stage).label + ' deals'"
+        >
+          @for (deal of column.deals; track deal.id) {
+            <article class="deal" cdkDrag [cdkDragData]="deal">
+              <div class="deal-top">
+                <a class="deal-title" [routerLink]="['/deals', deal.id]">{{ deal.title }}</a>
+                <app-stage-menu [deal]="deal" (selected)="moveTo(deal, $event)" />
+              </div>
+              @if (deal.company) {
+                <p class="deal-company">{{ deal.company.name }}</p>
+              }
+              <div class="deal-bottom">
+                <strong class="num">{{ deal.amount | money }}</strong>
+                <div class="deal-meta">
+                  @if (deal.expected_close_date) {
+                    <span
+                      class="close-date"
+                      [class.overdue]="isOverdue(deal)"
+                      title="Expected close"
+                    >
+                      <app-icon name="calendar" [size]="13" />
+                      {{ deal.expected_close_date | date: 'MMM d' }}
+                    </span>
+                  }
+                  @if (deal.contact) {
+                    <app-avatar [name]="deal.contact.full_name" [size]="24" />
+                  }
+                </div>
+              </div>
+              <div class="deal placeholder" *cdkDragPlaceholder></div>
+            </article>
+          } @empty {
+            <p class="column-empty">Drop deals here</p>
+          }
+        </div>
+      </section>
+    }
+  </div>
+
+  <div class="closed-columns">
+    @for (column of closedColumns(); track column.stage) {
+      <section class="closed" [style.--stage]="stageInfo(column.stage).color">
+        <header class="column-header">
+          <div class="column-title">
+            <span class="dot"></span>
+            <h2>{{ stageInfo(column.stage).label }}</h2>
+            <span class="count">{{ column.count }}</span>
+          </div>
+          <span class="total num">{{ column.total_amount | money }}</span>
+        </header>
+
+        <div
+          class="closed-list"
+          cdkDropList
+          [cdkDropListData]="column.stage"
+          (cdkDropListDropped)="drop($event)"
+          [attr.aria-label]="stageInfo(column.stage).label + ' deals'"
+        >
+          @for (deal of column.deals; track deal.id) {
+            <article class="closed-deal" cdkDrag [cdkDragData]="deal">
+              <div class="closed-main">
+                <a [routerLink]="['/deals', deal.id]">{{ deal.title }}</a>
+                <small>
+                  {{ deal.company?.name ?? 'No company' }}
+                  @if (deal.closed_at) {
+                    · {{ deal.closed_at | date: 'MMM d' }}
+                  }
+                </small>
+              </div>
+              <strong class="num">{{ deal.amount | money }}</strong>
+              <app-stage-menu [deal]="deal" (selected)="moveTo(deal, $event)" />
+              <div class="closed-deal placeholder" *cdkDragPlaceholder></div>
+            </article>
+          } @empty {
+            <p class="column-empty">
+              Drop a deal here to mark it {{ stageInfo(column.stage).label | lowercase }}
+            </p>
+          }
+        </div>
+      </section>
+    }
+  </div>
+</div>
