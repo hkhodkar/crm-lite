@@ -526,3 +526,10 @@ a.btn {
     gap: 12px;
   }
 }
+
+// on phones the toasts sit on top of a dialog's buttons, so keep them behind an open dialog
+@media (max-width: 560px) {
+  body:has(.backdrop) app-toast-container .toasts {
+    z-index: 90;
+  }
+}
