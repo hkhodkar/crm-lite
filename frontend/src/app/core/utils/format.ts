@@ -1,6 +1,7 @@
 const currency = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
+  minimumFractionDigits: 0,
   maximumFractionDigits: 0,
 });
 
@@ -8,6 +9,8 @@ const compactCurrency = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
   notation: 'compact',
+  // set both explicitly, older ICU versions otherwise print "$5.0K"
+  minimumFractionDigits: 0,
   maximumFractionDigits: 1,
 });
 
