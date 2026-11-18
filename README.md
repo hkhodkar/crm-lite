@@ -2,6 +2,8 @@
 
 A small, fast CRM for freelancers and small sales teams: contacts, companies, a drag-and-drop deals pipeline and an activity timeline, built with Angular 21 and FastAPI.
 
+**Live demo (runs on mock data in the browser): https://hkhodkar.github.io/crm-lite/**
+
 ![Dashboard](docs/dashboard.png)
 
 | Deals pipeline | Contact with activity timeline |
@@ -42,7 +44,7 @@ A small, fast CRM for freelancers and small sales teams: contacts, companies, a 
 **Tooling**
 
 - Docker Compose (nginx serves the Angular build and proxies `/api` to FastAPI)
-- GitHub Actions running backend and frontend tests on every push
+- GitHub Actions running backend and frontend tests on every push, and deploying the demo build to GitHub Pages
 
 ## Getting Started
 
@@ -84,6 +86,15 @@ npm start
 ```
 
 Open http://localhost:4200. The dev server proxies `/api` to the backend (see `proxy.conf.json`).
+
+### Demo mode
+
+The frontend can run without the backend. In demo mode every `/api` call is answered by a small mock API inside the app (`frontend/src/app/core/mock`): an HTTP interceptor backed by an in-memory copy of the demo data. It follows the same rules as FastAPI (search, filters, sorting, paging, pipeline grouping, dashboard numbers, validation errors and 404s), and changes are kept in `localStorage`, so they survive a reload. The banner at the top shows when demo mode is on and has a **Reset data** button.
+
+- `npx ng build --configuration demo` always uses the mock. This is the build deployed to GitHub Pages by `.github/workflows/deploy.yml`.
+- A normal build talks to the real API. If no API answers (the server is down, or a static host returns its own 404 page), the app switches to demo mode for the rest of the session.
+
+To try the demo build locally: `npx ng serve --configuration demo`.
 
 ### Tests
 
@@ -132,7 +143,7 @@ backend/
 └── Dockerfile
 frontend/
 ├── src/app/
-│   ├── core/              # API services, models, formatting and pipeline helpers
+│   ├── core/              # API services, models, helpers and the mock API for demo mode
 │   ├── features/
 │   │   ├── dashboard/     # KPI cards, charts, closing soon, recent activity
 │   │   ├── deals/         # pipeline board, list view, deal form and detail page
