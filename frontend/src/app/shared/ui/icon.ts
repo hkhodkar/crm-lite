@@ -118,6 +118,8 @@ const ICONS = {
     'M12 17h.01',
   ],
   check: ['M20 6 9 17l-5-5'],
+  info: ['M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0', 'M12 16v-4', 'M12 8h.01'],
+  reset: ['M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8', 'M3 3v5h5'],
 } satisfies Record<string, string[]>;
 
 export type IconName = keyof typeof ICONS;

@@ -41,15 +41,28 @@
           <app-icon [name]="theme.isDark() ? 'sun' : 'moon'" />
           <span>{{ theme.isDark() ? 'Light mode' : 'Dark mode' }}</span>
         </button>
-        <a class="nav-link" href="/docs" target="_blank" rel="noopener">
-          <app-icon name="external" />
-          <span>API docs</span>
-        </a>
+        @if (demo.active()) {
+          <a
+            class="nav-link"
+            href="https://github.com/hkhodkar/crm-lite"
+            target="_blank"
+            rel="noopener"
+          >
+            <app-icon name="external" />
+            <span>Source code</span>
+          </a>
+        } @else {
+          <a class="nav-link" href="/docs" target="_blank" rel="noopener">
+            <app-icon name="external" />
+            <span>API docs</span>
+          </a>
+        }
       </div>
     </div>
   </aside>
 
   <main class="content">
+    <app-demo-banner />
     <router-outlet />
   </main>
 </div>
