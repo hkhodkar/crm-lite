@@ -3,7 +3,3 @@ uvicorn[standard]==0.54.0
 sqlalchemy==2.1.9
 pydantic==2.14.3
 email-validator==2.4.0
-
-# testing
-pytest==9.2.0
-httpx2==2.16.2
