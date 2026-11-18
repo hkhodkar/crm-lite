@@ -1,0 +1,140 @@
+<section class="page">
+  <div>
+    <a class="breadcrumb" routerLink="/contacts"
+      ><app-icon name="arrow-left" [size]="14" /> Contacts</a
+    >
+  </div>
+
+  @if (contact.error()) {
+    <div class="card not-found">
+      <h2>Contact not found</h2>
+      <p>It may have been deleted.</p>
+      <a class="btn" routerLink="/contacts">Back to contacts</a>
+    </div>
+  } @else if (contact.value(); as c) {
+    <header class="detail-header">
+      <div class="identity">
+        <app-avatar [name]="c.full_name" [size]="56" />
+        <div>
+          <h1>{{ c.full_name }}</h1>
+          <p class="subtitle">
+            {{ c.job_title ?? 'No job title' }}
+            @if (c.company; as company) {
+              <span>at</span>
+              <a [routerLink]="['/companies', company.id]">{{ company.name }}</a>
+            }
+          </p>
+        </div>
+      </div>
+      <div class="page-actions">
+        <button type="button" class="btn" (click)="editing.set(true)">
+          <app-icon name="pencil" [size]="16" /> Edit
+        </button>
+        <button type="button" class="btn" (click)="confirmingDelete.set(true)">
+          <app-icon name="trash" [size]="16" /> Delete
+        </button>
+      </div>
+    </header>
+
+    <div class="detail-grid">
+      <div class="column">
+        <div class="card">
+          <div class="card-header"><h2>Details</h2></div>
+          <dl class="meta-list">
+            <div>
+              <dt>Email</dt>
+              <dd>
+                <a [href]="'mailto:' + c.email">{{ c.email }}</a>
+              </dd>
+            </div>
+            <div>
+              <dt>Phone</dt>
+              <dd>
+                @if (c.phone) {
+                  <a [href]="'tel:' + c.phone">{{ c.phone }}</a>
+                } @else {
+                  <span class="text-muted">-</span>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>Company</dt>
+              <dd>
+                @if (c.company; as company) {
+                  <a [routerLink]="['/companies', company.id]">{{ company.name }}</a>
+                } @else {
+                  <span class="text-muted">-</span>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>Added</dt>
+              <dd>{{ c.created_at | date: 'MMM d, y' }}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Deals</h2>
+            <button type="button" class="btn btn-sm" (click)="addingDeal.set(true)">
+              <app-icon name="plus" [size]="16" /> New deal
+            </button>
+          </div>
+          @if (deals.hasValue()) {
+            <ul class="list-plain related-list">
+              @for (deal of deals.value().items; track deal.id) {
+                <li class="related-item">
+                  <div class="related-main">
+                    <div>
+                      <a [routerLink]="['/deals', deal.id]">{{ deal.title }}</a>
+                      <small>{{ deal.company?.name ?? 'No company' }}</small>
+                    </div>
+                  </div>
+                  <div class="related-side">
+                    <strong class="num">{{ deal.amount | money }}</strong>
+                    <app-stage-badge [stage]="deal.stage" />
+                  </div>
+                </li>
+              } @empty {
+                <li class="text-muted">No deals with this contact yet.</li>
+              }
+            </ul>
+          }
+        </div>
+      </div>
+
+      <div class="column">
+        <app-activity-timeline
+          [filter]="{ contact_id: c.id }"
+          [contactId]="c.id"
+          [dealOptions]="dealOptions()"
+        />
+      </div>
+    </div>
+
+    @if (editing()) {
+      <app-contact-form [contact]="c" (saved)="onSaved()" (closed)="editing.set(false)" />
+    }
+    @if (addingDeal()) {
+      <app-deal-form
+        [defaults]="{ contactId: c.id, companyId: c.company_id }"
+        (saved)="onDealSaved()"
+        (closed)="addingDeal.set(false)"
+      />
+    }
+    @if (confirmingDelete()) {
+      <app-confirm-dialog
+        title="Delete contact?"
+        [message]="
+          c.full_name + ' and their activity will be deleted. Deals stay, without a contact.'
+        "
+        [busy]="deleting()"
+        (confirmed)="delete()"
+        (cancelled)="confirmingDelete.set(false)"
+      />
+    }
+  } @else {
+    <div class="loading-bar"></div>
+  }
+</section>

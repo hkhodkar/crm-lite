@@ -1,0 +1,154 @@
+.type-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+
+  button {
+    height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--text);
+    }
+
+    &.active {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+  }
+}
+
+.timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  // the vertical line behind the markers
+  &::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 15px;
+    width: 2px;
+    background: var(--border);
+  }
+}
+
+.item {
+  position: relative;
+  display: flex;
+  gap: 14px;
+
+  --type-color: var(--text-muted);
+
+  &[data-type='call'] {
+    --type-color: var(--stage-qualified);
+  }
+
+  &[data-type='email'] {
+    --type-color: var(--primary);
+  }
+
+  &[data-type='meeting'] {
+    --type-color: var(--stage-proposal);
+  }
+
+  &[data-type='note'] {
+    --type-color: var(--stage-negotiation);
+  }
+}
+
+.marker {
+  z-index: 1;
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--type-color) 14%, var(--surface));
+  color: var(--type-color);
+}
+
+.item-body {
+  flex: 1;
+  min-width: 0;
+  padding-top: 5px;
+}
+
+.item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.subject {
+  font-weight: 600;
+}
+
+.item-actions {
+  display: flex;
+  gap: 2px;
+  margin-top: -6px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  .icon-btn {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+.item:hover .item-actions,
+.item:focus-within .item-actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .item-actions {
+    opacity: 1;
+  }
+}
+
+.text {
+  margin-top: 4px;
+  color: var(--text);
+  white-space: pre-line;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+
+  .link {
+    white-space: nowrap;
+  }
+
+  .type {
+    color: var(--type-color);
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+}
+
+.compact .timeline {
+  gap: 14px;
+}

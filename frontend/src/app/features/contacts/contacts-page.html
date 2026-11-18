@@ -1,0 +1,126 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <h1>Contacts</h1>
+      <p class="subtitle">Everyone you talk to, across all your accounts.</p>
+    </div>
+    <div class="page-actions">
+      <button type="button" class="btn btn-primary" (click)="formOpen.set(true)">
+        <app-icon name="plus" /> New contact
+      </button>
+    </div>
+  </header>
+
+  <div class="card card-flush">
+    <div class="toolbar">
+      <label class="input-icon search">
+        <span class="visually-hidden">Search contacts</span>
+        <app-icon name="search" [size]="16" />
+        <input
+          class="input"
+          type="search"
+          placeholder="Search name, email, title or company"
+          [formControl]="listQuery.search"
+        />
+      </label>
+      <label>
+        <span class="visually-hidden">Company</span>
+        <select class="select" (change)="setCompany($any($event.target).value)">
+          <option value="">All companies</option>
+          @for (option of companies.value() ?? []; track option.id) {
+            <option [value]="option.id" [selected]="option.id === companyId()">
+              {{ option.name }}
+            </option>
+          }
+        </select>
+      </label>
+      @if (result(); as page) {
+        <span class="toolbar-end"
+          >{{ page.total }} {{ page.total === 1 ? 'contact' : 'contacts' }}</span
+        >
+      }
+    </div>
+
+    @if (contacts.isLoading()) {
+      <div class="loading-bar"></div>
+    }
+
+    @if (contacts.error()) {
+      <p class="empty-state">Could not load contacts. Is the API running?</p>
+    } @else if (result(); as page) {
+      @if (page.items.length) {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>
+                  <app-sort-header key="name" [sort]="sortKey()" (sortChange)="setSort($event)">
+                    Name
+                  </app-sort-header>
+                </th>
+                <th>
+                  <app-sort-header key="email" [sort]="sortKey()" (sortChange)="setSort($event)">
+                    Email
+                  </app-sort-header>
+                </th>
+                <th>
+                  <app-sort-header key="company" [sort]="sortKey()" (sortChange)="setSort($event)">
+                    Company
+                  </app-sort-header>
+                </th>
+                <th>Phone</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (contact of page.items; track contact.id) {
+                <tr class="clickable" (click)="open(contact)">
+                  <td>
+                    <div class="cell-main">
+                      <app-avatar [name]="contact.full_name" />
+                      <div>
+                        <a [routerLink]="['/contacts', contact.id]"
+                          ><strong>{{ contact.full_name }}</strong></a
+                        >
+                        <small>{{ contact.job_title ?? 'No title' }}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ contact.email }}</td>
+                  <td>
+                    @if (contact.company; as company) {
+                      <a
+                        [routerLink]="['/companies', company.id]"
+                        (click)="$event.stopPropagation()"
+                      >
+                        {{ company.name }}
+                      </a>
+                    } @else {
+                      <span class="text-muted">-</span>
+                    }
+                  </td>
+                  <td class="text-muted">{{ contact.phone ?? '-' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-pagination
+          [page]="page.page"
+          [pageSize]="page.page_size"
+          [total]="page.total"
+          (pageChange)="setPage($event)"
+        />
+      } @else {
+        <p class="empty-state">No contacts match these filters.</p>
+      }
+    }
+  </div>
+</section>
+
+@if (formOpen()) {
+  <app-contact-form
+    [companyId]="companyId()"
+    (saved)="onSaved($event)"
+    (closed)="formOpen.set(false)"
+  />
+}

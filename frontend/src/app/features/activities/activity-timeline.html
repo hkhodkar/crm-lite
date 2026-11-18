@@ -1,0 +1,118 @@
+<div class="card timeline-card" [class.compact]="compact()">
+  <header class="card-header">
+    <h2>{{ heading() }}</h2>
+    @if (showComposer()) {
+      <button type="button" class="btn btn-sm btn-primary" (click)="openCreate()">
+        <app-icon name="plus" [size]="16" /> Log activity
+      </button>
+    }
+  </header>
+
+  @if (!compact()) {
+    <div class="type-filter" role="group" aria-label="Filter by type">
+      <button type="button" [class.active]="!typeFilter()" (click)="setType(null)">All</button>
+      @for (type of types; track type.value) {
+        <button
+          type="button"
+          [class.active]="typeFilter() === type.value"
+          (click)="setType(type.value)"
+        >
+          {{ type.label }}
+        </button>
+      }
+    </div>
+  }
+
+  @if (activities.error()) {
+    <p class="empty-state">Could not load activity.</p>
+  } @else if (page() && !items().length) {
+    <p class="empty-state">
+      {{
+        typeFilter()
+          ? 'Nothing of this type yet.'
+          : 'No activity yet. Log a call, email or meeting to start the timeline.'
+      }}
+    </p>
+  } @else {
+    <ol class="timeline list-plain">
+      @for (activity of items(); track activity.id) {
+        <li class="item" [attr.data-type]="activity.type">
+          <span class="marker"><app-icon [name]="typeIcons[activity.type]" [size]="15" /></span>
+          <div class="item-body">
+            <div class="item-head">
+              <strong class="subject">{{ activity.subject }}</strong>
+              @if (!compact()) {
+                <div class="item-actions">
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    aria-label="Edit activity"
+                    (click)="editing.set(activity)"
+                  >
+                    <app-icon name="pencil" [size]="15" />
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn danger"
+                    aria-label="Delete activity"
+                    (click)="deleting.set(activity)"
+                  >
+                    <app-icon name="trash" [size]="15" />
+                  </button>
+                </div>
+              }
+            </div>
+            @if (activity.body && !compact()) {
+              <p class="text">{{ activity.body }}</p>
+            }
+            <p class="meta">
+              <span class="type">{{ activity.type }}</span>
+              <time
+                [attr.datetime]="activity.occurred_at"
+                [title]="activity.occurred_at | date: 'medium'"
+              >
+                {{ activity.occurred_at | timeAgo }}
+              </time>
+              @if (activity.contact && activity.contact.id !== contactId()) {
+                <span class="link">
+                  ·
+                  <a [routerLink]="['/contacts', activity.contact.id]">{{
+                    activity.contact.full_name
+                  }}</a>
+                </span>
+              }
+              @if (activity.deal && activity.deal.id !== dealId()) {
+                <span class="link">
+                  · <a [routerLink]="['/deals', activity.deal.id]">{{ activity.deal.title }}</a>
+                </span>
+              }
+            </p>
+          </div>
+        </li>
+      }
+    </ol>
+  }
+</div>
+
+@if (creating() || editing()) {
+  <app-activity-form
+    [activity]="editing()"
+    [contactId]="contactId()"
+    [dealId]="dealId()"
+    [defaultContactId]="defaultContactId()"
+    [contactOptions]="contactOptions()"
+    [dealOptions]="dealOptions()"
+    (saved)="onSaved()"
+    (closed)="closeForm()"
+  />
+}
+
+@if (deleting(); as activity) {
+  <app-confirm-dialog
+    title="Delete activity?"
+    [message]="'“' + activity.subject + '” will be removed from the timeline.'"
+    [busy]="busy()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="deleting.set(null)"
+  />
+}

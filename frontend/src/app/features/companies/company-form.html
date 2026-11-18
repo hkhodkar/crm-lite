@@ -1,0 +1,99 @@
+<app-modal [title]="company() ? 'Edit company' : 'New company'" (closed)="closed.emit()">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="modal-body">
+      @if (serverError(); as error) {
+        <p class="form-error" role="alert">{{ error }}</p>
+      }
+      <div class="form-grid">
+        <div class="field full">
+          <label for="company-name">Company name</label>
+          <input
+            id="company-name"
+            class="input"
+            formControlName="name"
+            placeholder="e.g. Northwind Logistics"
+            autocomplete="organization"
+          />
+          @if (showError('name')) {
+            <span class="field-error">Company name is required</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="company-industry">Industry <span class="optional">(optional)</span></label>
+          <input
+            id="company-industry"
+            class="input"
+            formControlName="industry"
+            list="industry-options"
+            placeholder="e.g. Software"
+          />
+          <datalist id="industry-options">
+            @for (industry of industries.value() ?? []; track industry) {
+              <option [value]="industry"></option>
+            }
+          </datalist>
+        </div>
+
+        <div class="field">
+          <label for="company-website">Website <span class="optional">(optional)</span></label>
+          <input
+            id="company-website"
+            class="input"
+            formControlName="website"
+            placeholder="example.com"
+            inputmode="url"
+          />
+        </div>
+
+        <div class="field">
+          <label for="company-phone">Phone <span class="optional">(optional)</span></label>
+          <input
+            id="company-phone"
+            class="input"
+            type="tel"
+            formControlName="phone"
+            placeholder="+1 512 555 0100"
+          />
+          @if (showError('phone')) {
+            <span class="field-error">Use digits, spaces and + ( ) - only</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="company-city">City <span class="optional">(optional)</span></label>
+          <input id="company-city" class="input" formControlName="city" placeholder="Austin" />
+        </div>
+
+        <div class="field full">
+          <label for="company-country">Country <span class="optional">(optional)</span></label>
+          <input
+            id="company-country"
+            class="input"
+            formControlName="country"
+            placeholder="United States"
+            autocomplete="country-name"
+          />
+        </div>
+
+        <div class="field full">
+          <label for="company-notes">Notes <span class="optional">(optional)</span></label>
+          <textarea
+            id="company-notes"
+            class="textarea"
+            formControlName="notes"
+            rows="3"
+            placeholder="Anything worth remembering about this account"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <footer class="modal-footer">
+      <button type="button" class="btn" (click)="closed.emit()">Cancel</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : company() ? 'Save changes' : 'Create company' }}
+      </button>
+    </footer>
+  </form>
+</app-modal>

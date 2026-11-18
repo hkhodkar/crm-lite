@@ -1,0 +1,94 @@
+<app-modal [title]="activity() ? 'Edit activity' : 'Log activity'" (closed)="closed.emit()">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="modal-body">
+      @if (serverError(); as error) {
+        <p class="form-error" role="alert">{{ error }}</p>
+      }
+      <div class="form-grid">
+        <fieldset class="field full type-field">
+          <legend>Type</legend>
+          <div class="segmented">
+            @for (type of types; track type.value) {
+              <label>
+                <input type="radio" formControlName="type" [value]="type.value" />
+                {{ type.label }}
+              </label>
+            }
+          </div>
+        </fieldset>
+
+        <div class="field full">
+          <label for="activity-subject">Subject</label>
+          <input
+            id="activity-subject"
+            class="input"
+            formControlName="subject"
+            placeholder="e.g. Discovery call with the product team"
+          />
+          @if (showError('subject')) {
+            <span class="field-error">Add a short subject</span>
+          }
+        </div>
+
+        <div class="field full">
+          <label for="activity-date">When</label>
+          <input
+            id="activity-date"
+            class="input"
+            type="datetime-local"
+            formControlName="occurred_at"
+          />
+          @if (showError('occurred_at')) {
+            <span class="field-error">Pick a date and time</span>
+          }
+        </div>
+
+        @if (showContactSelect()) {
+          <div class="field" [class.full]="!showDealSelect()">
+            <label for="activity-contact">Contact</label>
+            <select id="activity-contact" class="select" formControlName="contact_id">
+              <option [ngValue]="null">No contact</option>
+              @for (option of contactOptions(); track option.id) {
+                <option [ngValue]="option.id">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        @if (showDealSelect()) {
+          <div class="field" [class.full]="!showContactSelect()">
+            <label for="activity-deal">Deal <span class="optional">(optional)</span></label>
+            <select id="activity-deal" class="select" formControlName="deal_id">
+              <option [ngValue]="null">No deal</option>
+              @for (option of dealOptions(); track option.id) {
+                <option [ngValue]="option.id">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        @if (submitted() && form.hasError('unlinked')) {
+          <p class="field-error full">Pick a contact or a deal for this activity</p>
+        }
+
+        <div class="field full">
+          <label for="activity-body">Notes <span class="optional">(optional)</span></label>
+          <textarea
+            id="activity-body"
+            class="textarea"
+            formControlName="body"
+            rows="4"
+            placeholder="What was discussed, next steps…"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <footer class="modal-footer">
+      <button type="button" class="btn" (click)="closed.emit()">Cancel</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : activity() ? 'Save changes' : 'Log activity' }}
+      </button>
+    </footer>
+  </form>
+</app-modal>

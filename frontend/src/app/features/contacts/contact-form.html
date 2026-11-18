@@ -1,0 +1,102 @@
+<app-modal [title]="contact() ? 'Edit contact' : 'New contact'" (closed)="closed.emit()">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="modal-body">
+      @if (serverError(); as error) {
+        <p class="form-error" role="alert">{{ error }}</p>
+      }
+      <div class="form-grid">
+        <div class="field">
+          <label for="contact-first-name">First name</label>
+          <input
+            id="contact-first-name"
+            class="input"
+            formControlName="first_name"
+            placeholder="Jane"
+            autocomplete="given-name"
+          />
+          @if (showError('first_name')) {
+            <span class="field-error">First name is required</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="contact-last-name">Last name</label>
+          <input
+            id="contact-last-name"
+            class="input"
+            formControlName="last_name"
+            placeholder="Cooper"
+            autocomplete="family-name"
+          />
+          @if (showError('last_name')) {
+            <span class="field-error">Last name is required</span>
+          }
+        </div>
+
+        <div class="field full">
+          <label for="contact-email">Email</label>
+          <input
+            id="contact-email"
+            class="input"
+            type="email"
+            formControlName="email"
+            placeholder="jane@company.com"
+            autocomplete="email"
+          />
+          @if (showError('email')) {
+            <span class="field-error">
+              {{
+                form.controls.email.hasError('required')
+                  ? 'Email is required'
+                  : 'Enter a valid email address'
+              }}
+            </span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="contact-phone">Phone <span class="optional">(optional)</span></label>
+          <input
+            id="contact-phone"
+            class="input"
+            type="tel"
+            formControlName="phone"
+            placeholder="+1 555 010 2030"
+            autocomplete="tel"
+          />
+          @if (showError('phone')) {
+            <span class="field-error">Use digits, spaces and + ( ) - only</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="contact-title">Job title <span class="optional">(optional)</span></label>
+          <input
+            id="contact-title"
+            class="input"
+            formControlName="job_title"
+            placeholder="Head of Operations"
+            autocomplete="organization-title"
+          />
+        </div>
+
+        <div class="field full">
+          <label for="contact-company">Company <span class="optional">(optional)</span></label>
+          <select id="contact-company" class="select" formControlName="company_id">
+            <option [ngValue]="null">No company</option>
+            @for (company of companies.value() ?? []; track company.id) {
+              <option [ngValue]="company.id">{{ company.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <footer class="modal-footer">
+      <button type="button" class="btn" (click)="closed.emit()">Cancel</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : contact() ? 'Save changes' : 'Create contact' }}
+      </button>
+    </footer>
+  </form>
+</app-modal>

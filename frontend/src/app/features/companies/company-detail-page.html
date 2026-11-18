@@ -1,0 +1,185 @@
+<section class="page">
+  <div>
+    <a class="breadcrumb" routerLink="/companies"
+      ><app-icon name="arrow-left" [size]="14" /> Companies</a
+    >
+  </div>
+
+  @if (company.error()) {
+    <div class="card not-found">
+      <h2>Company not found</h2>
+      <p>It may have been deleted.</p>
+      <a class="btn" routerLink="/companies">Back to companies</a>
+    </div>
+  } @else if (company.value(); as c) {
+    <header class="detail-header">
+      <div class="identity">
+        <app-avatar [name]="c.name" [size]="56" [square]="true" />
+        <div>
+          <h1>{{ c.name }}</h1>
+          <p class="subtitle">
+            {{ c.industry ?? 'No industry' }}
+            @if (location()) {
+              <span>·</span> {{ location() }}
+            }
+          </p>
+        </div>
+      </div>
+      <div class="page-actions">
+        <button type="button" class="btn" (click)="editing.set(true)">
+          <app-icon name="pencil" [size]="16" /> Edit
+        </button>
+        <button type="button" class="btn" (click)="confirmingDelete.set(true)">
+          <app-icon name="trash" [size]="16" /> Delete
+        </button>
+      </div>
+    </header>
+
+    <div class="stat-row">
+      <div class="card stat">
+        <p class="stat-label">Open pipeline</p>
+        <p class="stat-value num">{{ c.open_pipeline_value | money }}</p>
+      </div>
+      <div class="card stat">
+        <p class="stat-label">Open deals</p>
+        <p class="stat-value num">{{ c.open_deal_count }}</p>
+      </div>
+      <div class="card stat">
+        <p class="stat-label">Won to date</p>
+        <p class="stat-value num">{{ wonValue() | money }}</p>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div class="column">
+        <div class="card">
+          <div class="card-header"><h2>Details</h2></div>
+          <dl class="meta-list">
+            <div>
+              <dt>Website</dt>
+              <dd>
+                @if (c.website) {
+                  <a [href]="c.website" target="_blank" rel="noopener">{{
+                    c.website.replace('https://', '')
+                  }}</a>
+                } @else {
+                  <span class="text-muted">-</span>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>Phone</dt>
+              <dd>{{ c.phone ?? '-' }}</dd>
+            </div>
+            <div>
+              <dt>Location</dt>
+              <dd>{{ location() || '-' }}</dd>
+            </div>
+            <div>
+              <dt>Customer since</dt>
+              <dd>{{ c.created_at | date: 'MMM d, y' }}</dd>
+            </div>
+            @if (c.notes) {
+              <div>
+                <dt>Notes</dt>
+                <dd class="notes">{{ c.notes }}</dd>
+              </div>
+            }
+          </dl>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>
+              People <span class="text-muted">({{ contactList().length }})</span>
+            </h2>
+            <button type="button" class="btn btn-sm" (click)="addingContact.set(true)">
+              <app-icon name="plus" [size]="16" /> Add
+            </button>
+          </div>
+          <ul class="list-plain related-list">
+            @for (contact of contactList(); track contact.id) {
+              <li class="related-item">
+                <div class="related-main">
+                  <app-avatar [name]="contact.full_name" [size]="32" />
+                  <div>
+                    <a [routerLink]="['/contacts', contact.id]">{{ contact.full_name }}</a>
+                    <small>{{ contact.job_title ?? contact.email }}</small>
+                  </div>
+                </div>
+              </li>
+            } @empty {
+              <li class="text-muted">No contacts at this company yet.</li>
+            }
+          </ul>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="card">
+          <div class="card-header">
+            <h2>
+              Deals <span class="text-muted">({{ dealList().length }})</span>
+            </h2>
+            <button type="button" class="btn btn-sm" (click)="addingDeal.set(true)">
+              <app-icon name="plus" [size]="16" /> New deal
+            </button>
+          </div>
+          <ul class="list-plain related-list">
+            @for (deal of dealList(); track deal.id) {
+              <li class="related-item">
+                <div class="related-main">
+                  <div>
+                    <a [routerLink]="['/deals', deal.id]">{{ deal.title }}</a>
+                    <small>{{ deal.contact?.full_name ?? 'No contact' }}</small>
+                  </div>
+                </div>
+                <div class="related-side">
+                  <strong class="num">{{ deal.amount | money }}</strong>
+                  <app-stage-badge [stage]="deal.stage" />
+                </div>
+              </li>
+            } @empty {
+              <li class="text-muted">No deals yet.</li>
+            }
+          </ul>
+        </div>
+
+        <app-activity-timeline
+          [filter]="{ company_id: c.id }"
+          [contactOptions]="contactOptions()"
+          [dealOptions]="dealOptions()"
+        />
+      </div>
+    </div>
+
+    @if (editing()) {
+      <app-company-form [company]="c" (saved)="onSaved()" (closed)="editing.set(false)" />
+    }
+    @if (addingContact()) {
+      <app-contact-form
+        [companyId]="c.id"
+        (saved)="onContactSaved()"
+        (closed)="addingContact.set(false)"
+      />
+    }
+    @if (addingDeal()) {
+      <app-deal-form
+        [defaults]="{ companyId: c.id }"
+        (saved)="onDealSaved()"
+        (closed)="addingDeal.set(false)"
+      />
+    }
+    @if (confirmingDelete()) {
+      <app-confirm-dialog
+        title="Delete company?"
+        [message]="c.name + ' will be deleted. Its contacts and deals are kept, without a company.'"
+        [busy]="deleting()"
+        (confirmed)="delete()"
+        (cancelled)="confirmingDelete.set(false)"
+      />
+    }
+  } @else {
+    <div class="loading-bar"></div>
+  }
+</section>

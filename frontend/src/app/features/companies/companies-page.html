@@ -1,0 +1,137 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <h1>Companies</h1>
+      <p class="subtitle">Accounts you sell to, with their people and open pipeline.</p>
+    </div>
+    <div class="page-actions">
+      <button type="button" class="btn btn-primary" (click)="formOpen.set(true)">
+        <app-icon name="plus" /> New company
+      </button>
+    </div>
+  </header>
+
+  <div class="card card-flush">
+    <div class="toolbar">
+      <label class="input-icon search">
+        <span class="visually-hidden">Search companies</span>
+        <app-icon name="search" [size]="16" />
+        <input
+          class="input"
+          type="search"
+          placeholder="Search name, industry or city"
+          [formControl]="listQuery.search"
+        />
+      </label>
+      <label>
+        <span class="visually-hidden">Industry</span>
+        <select
+          class="select"
+          [value]="industry() ?? ''"
+          (change)="setIndustry($any($event.target).value)"
+        >
+          <option value="">All industries</option>
+          @for (option of industries.value() ?? []; track option) {
+            <option [value]="option" [selected]="option === industry()">{{ option }}</option>
+          }
+        </select>
+      </label>
+      @if (result(); as page) {
+        <span class="toolbar-end"
+          >{{ page.total }} {{ page.total === 1 ? 'company' : 'companies' }}</span
+        >
+      }
+    </div>
+
+    @if (companies.isLoading()) {
+      <div class="loading-bar"></div>
+    }
+
+    @if (companies.error()) {
+      <p class="empty-state">Could not load companies. Is the API running?</p>
+    } @else if (result(); as page) {
+      @if (page.items.length) {
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>
+                  <app-sort-header key="name" [sort]="sortKey()" (sortChange)="setSort($event)">
+                    Company
+                  </app-sort-header>
+                </th>
+                <th>
+                  <app-sort-header key="industry" [sort]="sortKey()" (sortChange)="setSort($event)">
+                    Industry
+                  </app-sort-header>
+                </th>
+                <th>Location</th>
+                <th class="num">
+                  <app-sort-header
+                    key="contacts"
+                    [sort]="sortKey()"
+                    [descFirst]="true"
+                    (sortChange)="setSort($event)"
+                  >
+                    Contacts
+                  </app-sort-header>
+                </th>
+                <th class="num">Open deals</th>
+                <th class="num">
+                  <app-sort-header
+                    key="pipeline"
+                    [sort]="sortKey()"
+                    [descFirst]="true"
+                    (sortChange)="setSort($event)"
+                  >
+                    Pipeline
+                  </app-sort-header>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (company of page.items; track company.id) {
+                <tr class="clickable" (click)="open(company)">
+                  <td>
+                    <div class="cell-main">
+                      <app-avatar [name]="company.name" [square]="true" />
+                      <div>
+                        <a [routerLink]="['/companies', company.id]"
+                          ><strong>{{ company.name }}</strong></a
+                        >
+                        @if (company.website) {
+                          <small>{{ company.website.replace('https://', '') }}</small>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ company.industry ?? '-' }}</td>
+                  <td class="text-muted">
+                    {{ location(company) }}
+                  </td>
+                  <td class="num">{{ company.contact_count }}</td>
+                  <td class="num">{{ company.open_deal_count }}</td>
+                  <td class="num">
+                    <strong>{{ company.open_pipeline_value | money }}</strong>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-pagination
+          [page]="page.page"
+          [pageSize]="page.page_size"
+          [total]="page.total"
+          (pageChange)="setPage($event)"
+        />
+      } @else {
+        <p class="empty-state">No companies match these filters.</p>
+      }
+    }
+  </div>
+</section>
+
+@if (formOpen()) {
+  <app-company-form (saved)="onSaved($event)" (closed)="formOpen.set(false)" />
+}

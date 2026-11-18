@@ -128,12 +128,16 @@ ACTIVITY_TEMPLATES = {
             "Budget is approved for this quarter, procurement needs a formal quote.",
         ),
         ("Quick catch-up", "Short call to confirm next steps, nothing blocking right now."),
+        ("Scope call", "Agreed to cut the reporting module from phase one to hit the launch date."),
+        ("Pricing questions", "Asked if we can split the invoice over two quarters. Said yes."),
     ],
     ActivityType.EMAIL: [
         ("Sent proposal", "Shared the proposal PDF with scope, milestones and pricing."),
         ("Sent case study", "Sent two similar projects and a short summary of results."),
         ("Contract draft", "Sent the contract draft for legal review."),
         ("Intro email", "Introduced myself and suggested a 30 minute call next week."),
+        ("Meeting recap", "Sent notes from the workshop and the list of open questions."),
+        ("Revised estimate", "Updated the estimate after the scope change, total went down 8%."),
     ],
     ActivityType.MEETING: [
         (
@@ -141,7 +145,7 @@ ACTIVITY_TEMPLATES = {
             "Half-day workshop with product and engineering. Agreed on the first milestone.",
         ),
         (
-            "Demo of prototype",
+            "Prototype demo",
             "Showed the clickable prototype. Positive feedback on the dashboard layout.",
         ),
         ("Requirements session", "Collected requirements for reporting and user roles."),
@@ -149,12 +153,17 @@ ACTIVITY_TEMPLATES = {
             "Quarterly review",
             "Reviewed delivery so far and discussed the roadmap for next quarter.",
         ),
+        (
+            "On-site visit",
+            "Met the operations team in their office and watched the current workflow.",
+        ),
     ],
     ActivityType.NOTE: [
         ("Decision maker", "Final sign-off goes through the CFO, keep her in the loop."),
         ("Competitor in play", "They also talked to a larger agency, our edge is speed and price."),
-        ("Holiday", "Out of office for two weeks, follow up after the 20th."),
+        ("Out of office", "Away for two weeks, follow up after the 20th."),
         ("Tech stack", "Angular frontend, .NET backend, hosted on Azure."),
+        ("Referral", "Came in through a referral from a previous client."),
     ],
 }
 
@@ -229,27 +238,36 @@ def seed(db: Session, rng: random.Random | None = None) -> None:
     db.add_all(deals)
     db.flush()
 
-    activities = []
-    # every deal gets a couple of touch points with its contact
-    for deal in deals:
-        for _ in range(rng.randint(1, 3)):
-            activities.append(_activity(rng, now, deal.contact, deal, earliest=deal.created_at))
-    # and some general activity on contacts without a deal
+    # every deal gets at least one touch point, open deals get a few more,
+    # and the rest are general check-ins with contacts
+    activity_deals = list(deals)
+    open_deals = [deal for deal in deals if not deal.stage.is_closed]
+    activity_deals += [rng.choice(open_deals) for _ in range(20)]
+    used: dict[int, set[str]] = {}
+    activities = [_activity(rng, now, deal.contact, deal, used) for deal in activity_deals]
     while len(activities) < 60:
-        contact = rng.choice(contacts)
-        activities.append(_activity(rng, now, contact, None, earliest=contact.created_at))
-    db.add_all(activities[:60])
+        activities.append(_activity(rng, now, rng.choice(contacts), None, used))
+    db.add_all(activities)
     db.commit()
 
 
-def _activity(rng: random.Random, now, contact: Contact, deal: Deal | None, earliest) -> Activity:
+def _activity(
+    rng: random.Random, now, contact: Contact, deal: Deal | None, used: dict[int, set[str]]
+) -> Activity:
     activity_type = rng.choices(list(ActivityType), weights=[3, 4, 2, 2])[0]
-    subject, body = rng.choice(ACTIVITY_TEMPLATES[activity_type])
-    max_hours = max(2, min(int((now - earliest).total_seconds() // 3600), 24 * 45))
-    occurred = now - timedelta(hours=rng.randint(1, max_hours))
+    # avoid showing the same subject twice on one person's timeline
+    seen = used.setdefault(contact.id, set())
+    choices = [t for t in ACTIVITY_TEMPLATES[activity_type] if t[0] not in seen]
+    subject, body = rng.choice(choices or ACTIVITY_TEMPLATES[activity_type])
+    seen.add(subject)
+
+    earliest = deal.created_at if deal else contact.created_at
+    latest = deal.closed_at if deal and deal.closed_at else now
+    window = max(1, int((latest - earliest).total_seconds() // 3600))
+    occurred = latest - timedelta(hours=rng.randint(1, min(window, 24 * 40)))
     # keep timestamps within working hours so the timeline looks believable
     occurred = occurred.replace(hour=rng.randint(8, 17), minute=rng.choice([0, 15, 30, 45]))
-    if occurred > now:
+    if occurred > latest:
         occurred -= timedelta(days=1)
     return Activity(
         type=activity_type,
