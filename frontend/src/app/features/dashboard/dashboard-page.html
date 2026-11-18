@@ -1,0 +1,117 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <h1>Dashboard</h1>
+      <p class="subtitle">{{ today | date: 'EEEE, MMMM d' }} · here's how your pipeline looks.</p>
+    </div>
+    <div class="page-actions">
+      <a class="btn" routerLink="/deals"><app-icon name="kanban" [size]="16" /> Open pipeline</a>
+    </div>
+  </header>
+
+  @if (stats.error()) {
+    <div class="card empty-state">
+      Could not load the dashboard. Make sure the API is running on port 8000.
+    </div>
+  } @else if (data(); as s) {
+    <div class="kpis">
+      @for (kpi of kpis(); track kpi.label) {
+        <div class="card kpi" [style.--tone]="kpi.tone">
+          <div class="kpi-top">
+            <span class="kpi-label">{{ kpi.label }}</span>
+            <span class="kpi-icon"><app-icon [name]="kpi.icon" [size]="18" /></span>
+          </div>
+          <p class="kpi-value num">{{ kpi.value }}</p>
+          <p class="kpi-hint">{{ kpi.hint }}</p>
+        </div>
+      }
+    </div>
+
+    <div class="charts">
+      <div class="card">
+        <div class="card-header">
+          <h2>Deals by stage</h2>
+          <span class="text-muted">{{ s.totals.deals }} deals in total</span>
+        </div>
+        <div class="stage-legend">
+          @for (stage of s.deals_by_stage; track stage.stage) {
+            <span><app-stage-badge [stage]="stage.stage" /> {{ stage.count }}</span>
+          }
+        </div>
+        <div class="chart-box">
+          @if (stageChart(); as config) {
+            <canvas [appChart]="config" aria-label="Deal value per stage"></canvas>
+          }
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Won revenue</h2>
+          <span class="text-muted">Last 6 months</span>
+        </div>
+        <div class="chart-box tall">
+          @if (wonChart(); as config) {
+            <canvas [appChart]="config" aria-label="Won revenue per month"></canvas>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <div class="card card-flush">
+        <div class="card-header">
+          <h2>Closing soon</h2>
+          <a
+            routerLink="/deals"
+            [queryParams]="{ view: 'list', status: 'open', sort: 'expected_close_date' }"
+          >
+            View all
+          </a>
+        </div>
+        @if (closingSoon.hasValue()) {
+          <ul class="list-plain closing">
+            @for (deal of closingSoon.value().items; track deal.id) {
+              <li>
+                <a class="closing-row" [routerLink]="['/deals', deal.id]">
+                  <div class="closing-main">
+                    <strong>{{ deal.title }}</strong>
+                    <small>{{ deal.company?.name ?? 'No company' }}</small>
+                  </div>
+                  <app-stage-badge [stage]="deal.stage" />
+                  <div class="closing-side">
+                    <strong class="num">{{ deal.amount | money }}</strong>
+                    @if (daysUntil(deal.expected_close_date); as days) {
+                      <small [class.text-danger]="days < 0">
+                        {{ days < 0 ? -days + 'd overdue' : 'in ' + days + 'd' }}
+                      </small>
+                    } @else {
+                      <small>{{ deal.expected_close_date ? 'today' : 'no date' }}</small>
+                    }
+                  </div>
+                </a>
+              </li>
+            } @empty {
+              <li class="empty-state">No open deals. Time to fill the pipeline.</li>
+            }
+          </ul>
+        }
+      </div>
+
+      <app-activity-timeline
+        heading="Recent activity"
+        [filter]="{}"
+        [limit]="6"
+        [compact]="true"
+        [showComposer]="false"
+      />
+    </div>
+
+    <p class="totals text-muted">
+      {{ s.totals.companies | number }} companies · {{ s.totals.contacts | number }} contacts ·
+      {{ s.totals.activities | number }} logged activities
+    </p>
+  } @else {
+    <div class="loading-bar"></div>
+  }
+</section>
